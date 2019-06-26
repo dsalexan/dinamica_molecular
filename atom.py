@@ -17,6 +17,8 @@ class Atom:
 
         self.calculate(0)
 
+    @property
+
     def calculate(self, t=None, r=None):
         r = round(t) if t is not None else r
 
