@@ -1,6 +1,6 @@
 import numpy
 import uuid
-from constants import T, round, DELTA_T as dt
+from constants import T, round, DELTA_T as dt, ARGON_WEIGHT
 from functions import potencial_lennard_jones, distancia_euclidiana
 
 
@@ -15,11 +15,11 @@ def array(value):
         return numpy.array(value)
     else:
         a = numpy.empty(3)
-        a = a.fill(value)
+        a.fill(value)
         return a
 
 class Atom:
-    def __init__(self, position=(0, 0, 0), mass=0, speed=0, acceleration=0, charge=0, environment=None):
+    def __init__(self, position=(0, 0, 0), mass=ARGON_WEIGHT, speed=0, acceleration=0, charge=0, environment=None):
 
         if environment is None:
             environment = []
@@ -44,6 +44,13 @@ class Atom:
         self._d_externals = dict()
 
         self.calculate(0)
+
+    def __repr__(self):
+        return '{} ({})'.format(self.id, self.environment)
+
+    def snapshot(self, t=None, r=None):
+        r = round(t) if t is not None else r
+        return '{} (pos={}, vel={}, acc={})'.format(self.id, self.position(r=r), self.speed(r=r), self.acceleration(r=r))
 
     # getters
 
@@ -88,7 +95,7 @@ class Atom:
         if self._d_externals[r][influence] is None:
             self._d_externals[r][influence] = []
         
-        self._d_externals[r][influence].push(source)
+        self._d_externals[r][influence].append(source)
 
     # functions
 
@@ -115,10 +122,12 @@ class Atom:
 
             fi = array(0)
         else:
-            ri = self.position(r=t)
-            vi = self.speed(r=t)
-            ai = self.acceleration(r=t)
-            qi = self.charge(r=t)
+            ti = t - 1
+
+            ri = self.position(r=t-1)
+            vi = self.speed(r=t-1)
+            ai = self.acceleration(r=t-1)
+            qi = self.charge(r=t-1)
 
             '''
             acho que é a ideia aqui é:
@@ -135,10 +144,10 @@ class Atom:
 
             # isso ai
 
-            fi = numpy.array([potencial_lennard_jones(self.distance(other, r=t, norm=False)) for other in self.environment if other.id != self.id])
+            fi = numpy.array([potencial_lennard_jones(self.distance(other, r=t-1, norm=False)) for other in self.environment if other.id != self.id])
             fi = numpy.sum(fi) if len(self.environment) > 0 else numpy.zeros(3)
 
-            f = fi.copy
+            f = fi.copy()
             if 'force' in externals:
                 fe = externals['force']
                 f += numpy.sum(fe)

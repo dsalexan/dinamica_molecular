@@ -1,6 +1,6 @@
 import numpy
 from atom import Atom
-from constants import ANGSTROM, ARGON_DIAMETER
+from constants import ANGSTROM, ARGON_DIAMETER, round
 
 class Environment:
     def __init__(self, name, dimensions=None):
@@ -49,8 +49,11 @@ class Environment:
         if N is None:
             raise NotImplementedError("Not implemented empty population")
 
-        for i in range(N):
+        for _ in range(N):
             r = self.position_helper(position)
 
             x = Atom(position=r, environment=self)
+            self.population.append(x)
             self.__population_index[x.id] = x
+
+            
