@@ -8,3 +8,10 @@ def timer():
     yield lambda: elapser()
     end = default_timer()
     elapser = lambda: end-start
+
+def block_print():
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def enable_print():
+    sys.stdout = sys.__stdout__

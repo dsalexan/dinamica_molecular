@@ -1,6 +1,6 @@
 import numpy
 import uuid
-from constants import T, round, DELTA_T as dt, ARGON_WEIGHT
+from constants import T, round, DELTA_T as dt, ARGON_WEIGHT, ANGSTROM, ANGSTROM_FEMTOSECOND, ANGSTROM_FEMTOSECOND_2
 from functions import potencial_lennard_jones, distancia_euclidiana
 
 
@@ -50,7 +50,7 @@ class Atom:
 
     def snapshot(self, t=None, r=None):
         r = round(t) if t is not None else r
-        return '{} (pos={}, vel={}, acc={})'.format(self.id, self.position(r=r), self.speed(r=r), self.acceleration(r=r))
+        return '{} (pos (Å)={}, vel (Å/fs)={}, acc (Å/fs²)={})'.format(self.id, self.position(r=r, unit=ANGSTROM), self.speed(r=r, unit=ANGSTROM_FEMTOSECOND), self.acceleration(r=r, unit=ANGSTROM_FEMTOSECOND_2))
 
     # getters
 
@@ -59,14 +59,29 @@ class Atom:
 
         return getattr(self, '_d_{}'.format(variable))[r]
 
-    def position(self, t=None, r=None):
-        return self.get_variable('position', t, r)
-
-    def speed(self, t=None, r=None):
-        return self.get_variable('speed', t, r)
+    def position(self, t=None, r=None, unit=1):
+        value = self.get_variable('position', t, r)
         
-    def acceleration(self, t=None, r=None):
-        return self.get_variable('acceleration', t, r)
+        if unit != 1:
+            value = value.copy()
+
+        return value / unit
+
+    def speed(self, t=None, r=None, unit=1):
+        value = self.get_variable('speed', t, r)
+        
+        if unit != 1:
+            value = value.copy()
+        
+        return value / unit
+        
+    def acceleration(self, t=None, r=None, unit=1):
+        value = self.get_variable('acceleration', t, r)
+        
+        if unit != 1:
+            value = value.copy()
+
+        return value / unit
         
     def charge(self, t=None, r=None):
         return self.get_variable('charge', t, r)
@@ -144,16 +159,18 @@ class Atom:
 
             # isso ai
 
-            fi = numpy.array([potencial_lennard_jones(self.distance(other, r=t-1, norm=False)) for other in self.environment if other.id != self.id])
-            fi = numpy.sum(fi) if len(self.environment) > 0 else numpy.zeros(3)
+            fi = [potencial_lennard_jones(self.distance(other, r=t-1, norm=False)) for other in self.environment if other.id != self.id]
+            fi = numpy.array(fi)
+            fi = numpy.sum(fi, axis=0) if len(self.environment) > 0 else numpy.zeros(3)
 
             f = fi.copy()
             if 'force' in externals:
                 fe = externals['force']
-                f += numpy.sum(fe)
+                f += numpy.sum(fe, axis=0)
 
             # ok, mas e a carga??? 
             # argonio é um gas inerte, entao ignora isso
+
 
             a = f / m
             v = vi + a*dt

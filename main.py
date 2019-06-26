@@ -1,8 +1,9 @@
+import numpy
 from atom import Atom
 from environment import Environment
 from constants import round, T
 
-from dev import timer
+from dev import timer, block_print, enable_print
 
 def simulate(env, t=None, r=None):
     r = r if r is not None else (round(t[0]), round(t[1]))
@@ -12,6 +13,12 @@ def simulate(env, t=None, r=None):
     print(msg)
     with timer() as elapsed_sim:
         for r in range(r[0], r[1]):
+            if r % 2 == 0:
+                enable_print()
+            else: 
+                block_print()
+
+
             t = T(r)
 
             print('{}'.format(r))
@@ -21,12 +28,14 @@ def simulate(env, t=None, r=None):
                     with timer() as elapsed_calc:
                         x.calculate(r=r)
                         
-                        print('    {:180}'.format(x.snapshot(r=r)), end='')
-                        print('{:.7f}ms'.format(elapsed_calc() / 1000))
+                        with numpy.printoptions(precision=4, suppress=True):
+                            print('    {:180}'.format(x.snapshot(r=r)), end='')
+                            print('{:.7f}ms'.format(elapsed_calc() / 1000))
 
                 print('{:184}'.format('{} ({}s)'.format(r, t)), end='')
                 print('total: {:.7f}ms'.format(elapsed_loop() / 1000))
     
+    enable_print()
     print('\n', end='')
     print('ENDED {:178}'.format(msg), end='')
     print('sim: {:.7f}ms'.format(elapsed_sim() / 1000))
@@ -35,4 +44,4 @@ def simulate(env, t=None, r=None):
 E = Environment('A')
 E.populate(2, position='randomize')
 
-simulate(E, r=(0, 100))
+simulate(E, r=(0, 10))
